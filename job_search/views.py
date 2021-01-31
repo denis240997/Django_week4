@@ -1,4 +1,5 @@
-from django.http import Http404
+from django.db.models import Count
+from django.shortcuts import redirect, get_object_or_404
 from django.views.generic import ListView, DetailView
 from django.views.generic.base import TemplateView
 
@@ -10,37 +11,42 @@ class MainView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(MainView, self).get_context_data(**kwargs)
-        context['specialty_list'] = Specialty.objects.all()
-        context['company_list'] = Company.objects.all()
+        context['specialty_list'] = Specialty.objects.annotate(vac_count=Count('vacancies'))
+        context['company_list'] = Company.objects.annotate(vac_count=Count('vacancies'))
         return context
 
 
-class ListVacancyView(ListView):
+class ListVacancyViewAll(ListView):
     model = Vacancy
     context_object_name = 'vacancy_list'
-
-    def get_queryset(self):
-        if 'code' not in self.kwargs:
-            return Vacancy.objects.all()
-        if self.kwargs['code'] in {s.code for s in Specialty.objects.all()}:
-            return Vacancy.objects.filter(specialty__code=self.kwargs['code'])
-        raise Http404(f'There are no such specialty: \"{self.kwargs["code"]}\" !')
+    queryset = Vacancy.objects.all()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['title'] = 'Все вакансии'
+        context['count'] = len(self.queryset) if self.queryset else 0
+        return context
 
-        if 'code' not in self.kwargs:
-            context['specialty_name'] = 'Все вакансии'
-        else:
-            try:
-                context['specialty_name'] = Specialty.objects.get(code=self.kwargs['code']).title
-            except Specialty.MultipleObjectsReturned:   # Specialty.DoesNotExist обработано в методе get_queryset
-                raise Http404(f'There are more than one specialty with code \"{self.kwargs["code"]}\" !')
 
+class ListVacancyViewSub(ListView):
+    model = Vacancy
+    context_object_name = 'vacancy_list'
+
+    def get_queryset(self, **kwargs):
+        # Придумать как не аннотировать все, это излишне
+        self.specialty = get_object_or_404(Specialty.objects.annotate(vac_count=Count('vacancies')),
+                                           code=self.kwargs['code'])
+        return self.specialty.vacancies.all()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = self.specialty.title
+        context['count'] = self.specialty.vac_count
         return context
 
 
 class DetailVacancyView(DetailView):
+    # А тут как уменьшить количество запросов???
     model = Vacancy
     context_object_name = 'vacancy'
 
@@ -48,3 +54,21 @@ class DetailVacancyView(DetailView):
 class DetailCompanyView(DetailView):
     model = Company
     context_object_name = 'company'
+
+
+# class TestView(TemplateView):
+#     template_name = 'job_search/form.html'
+#
+#     def get_context_data(self, **kwargs):
+#         context = super(TestView, self).get_context_data()
+#         context['postcard_form'] = PostcardForm()
+#         return context
+#
+#     def post(self, request, *args, **kwargs):
+#         postcard_form = PostcardForm(request.POST)
+#         if postcard_form.is_valid():
+#             print("Haha ty pidor")
+#             print(postcard_form.data.get('date_of_delivery'))
+#         else:
+#             print("Haha ty PIDORAS")
+#         return redirect('/test')

@@ -1,16 +1,24 @@
-# (venv) hamit@Precision-5510:~/Desktop/PycharmProjects/jumanji$ python manage.py shell
-# Далее все содержимое копируем в интерактивную оболочку
+import json
+import os
 
-import job_search.mock_data as md
-from job_search.models import Company, Specialty, Vacancy
+import django
 
-for company in md.companies:
-    Company.objects.create(**company)
+os.environ['DJANGO_SETTINGS_MODULE'] = 'conf.settings'
+django.setup()
 
-for specialty in md.specialties:
-    Specialty.objects.create(**specialty)
+from job_search.models import Vacancy, Company, Specialty
 
-for job in md.jobs:
-    job['specialty'] = Specialty.objects.get(code=job['specialty'])
-    job['company'] = Company.objects.get(id=job['company'])
-    Vacancy.objects.create(**job)
+if __name__ == '__main__':
+    with open('../mock_data.json') as file:
+        mock_data = json.load(file)
+
+    for company in mock_data['companies']:
+        Company.objects.create(**company)
+
+    for specialty in mock_data['specialties']:
+        Specialty.objects.create(**specialty)
+
+    for job in mock_data['jobs']:
+        job['specialty'] = Specialty.objects.get(code=job['specialty'])
+        job['company'] = Company.objects.get(id=job['company'])
+        Vacancy.objects.create(**job)

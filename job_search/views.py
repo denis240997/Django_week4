@@ -63,7 +63,9 @@ class ApplicationSend(View):
     def post(self, request):
         application_form = ApplicationForm(request.POST)
         if application_form.is_valid():
-            Application.objects.create(vacancy=Vacancy.objects.all().first() , user=User.objects.all().first(), **application_form.cleaned_data)
+            appl_data = application_form.cleaned_data
+            appl_data['vacancy'] = get_object_or_404(Vacancy, id=appl_data['vacancy'])
+            Application.objects.create(user=User.objects.all().first(), **appl_data)
         return redirect('/')                                  # Переделать!!!
 
 

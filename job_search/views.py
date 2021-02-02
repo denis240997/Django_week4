@@ -1,9 +1,11 @@
 from django.db.models import Count
 from django.shortcuts import redirect, get_object_or_404
-from django.views.generic import ListView, DetailView
+from django.views.generic import ListView, DetailView, View
 from django.views.generic.base import TemplateView
+from django.contrib.auth.models import User
 
-from job_search.models import Company, Specialty, Vacancy
+from job_search.models import Company, Specialty, Vacancy, Application
+from job_search.forms import ApplicationForm
 
 
 class MainView(TemplateView):
@@ -54,6 +56,15 @@ class DetailVacancyView(DetailView):
 class DetailCompanyView(DetailView):
     model = Company
     context_object_name = 'company'
+
+
+class ApplicationSend(View):
+
+    def post(self, request):
+        application_form = ApplicationForm(request.POST)
+        if application_form.is_valid():
+            Application.objects.create(vacancy=Vacancy.objects.all().first() , user=User.objects.all().first(), **application_form.cleaned_data)
+        return redirect('/')                                  # Переделать!!!
 
 
 # class TestView(TemplateView):

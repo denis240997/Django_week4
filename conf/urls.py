@@ -21,7 +21,7 @@ urlpatterns = [
     #
     path('signin/', SigninView.as_view(), name='signin'),
     path('signup/', SignupView.as_view(), name='signup'),
-    # path('logout/', Logout.as_view(), name='logout'),
+    path('logout/', logout_view, name='logout'),
 ]
 
 if settings.DEBUG:

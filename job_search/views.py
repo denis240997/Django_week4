@@ -5,7 +5,7 @@ from django.views.generic import ListView, DetailView, View
 from django.views.generic.base import TemplateView
 from django.urls import reverse
 
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
 
 from django.contrib.auth.forms import UserCreationForm
 from django.views.generic import CreateView
@@ -55,20 +55,14 @@ class ListVacancyViewSub(ListView):
 
 
 class DetailVacancyView(DetailView):
-    # А тут как уменьшить количество запросов???
     model = Vacancy
     context_object_name = 'vacancy'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # print(self.request.GET)
-        application_form = self.request.session.pop('form', None)
+        application_form = self.request.session.get(f'form_{self.object.id}', None)
         context['application_form'] = ApplicationForm(application_form)
         self.request.session['vacancy'] = self.object.id
-        # if application_form:
-        #     context['application_form'] = ApplicationForm(application_form)
-        # else:
-        #     context['application_form'] = ApplicationForm()
         return context
 
 
@@ -90,22 +84,10 @@ class ApplicationSendView(TemplateView):
                 application.user_id = request.user.id
                 application.save()
                 return redirect(reverse('application_send'))
-            request.session['form'] = request.POST
+            request.session[f'form_{vacancy_id}'] = request.POST
             return redirect('signin')
-        request.session['form'] = request.POST
+        request.session[f'form_{vacancy_id}'] = request.POST
         return redirect(f'/vacancies/{vacancy_id}/')    # Переделать!!!
-
-
-# class SignupView(CreateView):
-#    form_class = UserCreationForm
-#    success_url = 'signin'
-#    template_name = 'job_search/authorization/signup.html'
-#    # fields = ['name']
-#    #     'username',
-#    #     'first_name',
-#    #     'last_name',
-#    #     'password',
-#    # ]
 
 
 class SignupView(TemplateView):
@@ -131,3 +113,8 @@ class SignupView(TemplateView):
 class SigninView(LoginView):
     redirect_authenticated_user = True
     template_name = 'job_search/authorization/login.html'
+
+
+def logout_view(request):
+    logout(request)
+    return redirect('main')

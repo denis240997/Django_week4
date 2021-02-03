@@ -1,4 +1,5 @@
 {% extends 'job_search/base.html' %}
+{% load widget_tweaks %}
 
 {% block container %}
 
@@ -25,23 +26,47 @@
 
           <form action={% url 'application_send' %} method="post" class="card mt-4 mb-3" enctype="multipart/form-data">
             {% csrf_token %}
+
             <div class="card-body mx-3">
               <p class="h5 mt-3 font-weight-normal">Отозваться на вакансию</p>
-              <div class="form-group">
-                <label class="mb-1 mt-2" for="written_username">Вас зовут</label>
-                <input class="form-control" type="text" placeholder="" name="written_username">
-              </div>
-              <div class="form-group">
-                <label class="mb-1" for="written_phone">Ваш телефон</label>
-                <input class="form-control" type="tel" placeholder="" name="written_phone">
-              </div>
-              <div class="form-group">
-                <label class="mb-1" for="written_cover_letter" >Сопроводительное письмо</label>
-                <textarea class="form-control" rows="8" name="written_cover_letter"></textarea>
-              </div>
-              <input type="hidden" name="vacancy" value="{{ vacancy.id }}">
+
+
+              <table>{{ application_form.as_table }}</table>
+
+
+<!--              {% for field in application_form %}-->
+
+<!--              <div class="form-group">-->
+<!--                <label class="mb-1 mt-2" for="{{ field.id_for_label }}">-->
+<!--                  {{ field.label }}{% if field.field.required %}*{% endif %}-->
+<!--                </label>-->
+<!--                <p>{% render_field field %}</p>-->
+<!--              </div>-->
+
+<!--              {% endfor %}-->
+
+
+
+
+<!--              <div class="form-group">-->
+<!--                <label class="mb-1 mt-2" for="written_username">Вас зовут</label>-->
+<!--                <input class="form-control" type="text" placeholder="" name="written_username", value="">-->
+<!--              </div>-->
+<!--          -->
+<!--              <div class="form-group">-->
+<!--                <label class="mb-1" for="written_phone">Ваш телефон</label>-->
+<!--                <input class="form-control" type="tel" placeholder="" name="written_phone">-->
+<!--              </div>-->
+<!--          -->
+<!--              <div class="form-group">-->
+<!--                <label class="mb-1" for="written_cover_letter" >Сопроводительное письмо</label>-->
+<!--                <textarea class="form-control" rows="8" name="written_cover_letter"></textarea>-->
+<!--              </div>-->
+
               <input type="submit" class="btn btn-primary mt-4 mb-2" value="Отправить заявку">
+
             </div>
+
           </form>
         </section>
       </div>

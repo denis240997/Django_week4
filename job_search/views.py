@@ -1,3 +1,4 @@
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User, AnonymousUser
 from django.db.models import Count
 from django.shortcuts import redirect, get_object_or_404
@@ -11,7 +12,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.views.generic import CreateView
 from django.contrib.auth.views import LoginView
 
-from job_search.forms import ApplicationForm, RegistrationForm
+from job_search.forms import ApplicationForm, RegistrationForm, CompanyEditForm
 from job_search.models import Company, Specialty, Vacancy, Application
 
 
@@ -87,7 +88,7 @@ class ApplicationSendView(TemplateView):
             request.session[f'form_{vacancy_id}'] = request.POST
             return redirect('signin')
         request.session[f'form_{vacancy_id}'] = request.POST
-        return redirect(f'/vacancies/{vacancy_id}/')    # Переделать!!!
+        return redirect(f'/vacancies/{vacancy_id}/')  # Переделать!!!
 
 
 class SignupView(TemplateView):
@@ -106,8 +107,7 @@ class SignupView(TemplateView):
             login(request, user)
             return redirect('signin')
         request.session['registration_form'] = request.POST
-        redirect('signup')
-
+        return redirect('signup')
 
 
 class SigninView(LoginView):
@@ -118,3 +118,50 @@ class SigninView(LoginView):
 def logout_view(request):
     logout(request)
     return redirect('main')
+
+
+# @login_required
+class MyCompanyEditView(DetailView):
+    template_name = 'job_search/authorized_interface/company_edit.html'
+
+    def get_company_or_none(self, request):
+        try:
+            return Company.objects.get(owner__id=request.user.id)
+        except Company.DoesNotExist:
+            return None
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_company_or_none(request)
+        if self.object is None and not request.session.pop('create_company', False):
+            return redirect('my_company_create')
+        context = self.get_context_data(**kwargs)
+        return self.render_to_response(context)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['company_form'] = CompanyEditForm(self.object)
+        context['updated'] = self.request.session.pop('updated', False)
+        return context
+
+    def post(self, request):
+        company_form = CompanyEditForm(request.POST)
+        self.object = self.get_company_or_none(request)
+        if company_form.is_valid():
+            if self.object:
+                self.object.update(**company_form.cleaned_data)
+            else:
+                self.object = Company.objects.create(**company_form.cleaned_data)
+            request.session['updated'] = True
+        # request.session['company_form'] = request.POST
+        return redirect('my_company')
+
+
+
+# @login_required
+class MyCompanyCreateView(TemplateView):
+    template_name = 'job_search/authorized_interface/company_create.html'
+
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data(**kwargs)
+        request.session['create_company'] = True
+        return self.render_to_response(context)

@@ -15,7 +15,8 @@ urlpatterns = [
     path('vacancies/send/', ApplicationSendView.as_view(), name='application_send'),
 
     path('companies/<int:pk>/', DetailCompanyView.as_view(), name='companies_detail'),
-    # path('mycompany/', MyCompanyView.as_view(), name='my_company'),
+    path('mycompany/', MyCompanyEditView.as_view(), name='my_company'),
+    path('mycompany/create/', MyCompanyCreateView.as_view(), name='my_company_create'),
     # path('mycompany/vacancies/', ListMyVacanciesView.as_view(), name='my_vacancies'),
     # path('mycompany/vacancies/<int:pk>/', DetailMyVacanciesView.as_view(), name='my_vacancy_detail'),
     #

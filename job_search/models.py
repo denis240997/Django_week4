@@ -11,7 +11,7 @@ class Company(models.Model):
     logo = models.ImageField(upload_to=MEDIA_COMPANY_IMAGE_DIR, null=True)
     description = models.TextField()
     employee_count = models.IntegerField()
-    owner = models.ForeignKey(User, related_name="company", on_delete=models.CASCADE, null=True)
+    owner = models.OneToOneField(User, related_name="company", on_delete=models.CASCADE, null=True)
 
     def __str__(self):
         return f'Company {self.id} : {self.title}'

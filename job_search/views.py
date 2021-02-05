@@ -124,14 +124,14 @@ def logout_view(request):
 class MyCompanyEditView(DetailView):
     template_name = 'job_search/authorized_interface/company_edit.html'
 
-    def get_company_or_none(self, request):
+    def set_object(self, request):
         try:
-            return Company.objects.get(owner__id=request.user.id)
+            self.object = Company.objects.get(owner__id=request.user.id)
         except Company.DoesNotExist:
-            return None
+            self.object = None
 
     def get(self, request, *args, **kwargs):
-        self.object = self.get_company_or_none(request)
+        self.set_object(request)
         if self.object is None and not request.session.pop('create_company', False):
             return redirect('my_company_create')
         context = self.get_context_data(**kwargs)
@@ -139,22 +139,28 @@ class MyCompanyEditView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['company_form'] = CompanyEditForm(self.object)
+        form_content = self.request.session.pop('company_form', None)
+        context['company_form'] = CompanyEditForm(form_content if form_content else self.object.__dict__)
         context['updated'] = self.request.session.pop('updated', False)
         return context
 
     def post(self, request):
-        company_form = CompanyEditForm(request.POST)
-        self.object = self.get_company_or_none(request)
+        self.set_object(request)
+        form_content = request.POST, request.FILES
+        company_form = CompanyEditForm(*form_content)
         if company_form.is_valid():
             if self.object:
-                self.object.update(**company_form.cleaned_data)
+                print(self.object)
+                for attr, value in company_form.cleaned_data.items():
+                    setattr(self.object, attr, value)
             else:
-                self.object = Company.objects.create(**company_form.cleaned_data)
+                self.object = Company(**company_form.cleaned_data)
+                self.object.owner_id = request.user.id
+            self.object.save()
             request.session['updated'] = True
-        # request.session['company_form'] = request.POST
+            return redirect('my_company')
+        request.session['company_form'] = form_content[0]
         return redirect('my_company')
-
 
 
 # @login_required
